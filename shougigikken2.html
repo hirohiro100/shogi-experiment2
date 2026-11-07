@@ -67,7 +67,6 @@
 			padding: 5px;
 		}
 
-		/* ▲先手（右上・縦書き） */
 		.sente-vertical {
 			position: absolute;
 			top: 15px;
@@ -79,7 +78,6 @@
 			letter-spacing: 2px;
 		}
 
-		/* △後手（左下・縦書き＆180度回転） */
 		.gote-vertical {
 			position: absolute;
 			bottom: 15px;
@@ -762,9 +760,10 @@
 
 		async function loadCsvFileDirectly() {
 		try {
-		// images2フォルダー内を指定するように修正
 		const response = await fetch('images2/駒得、評価値2.csv');
-		if (!response.ok) throw new Error("CSVファイルが見つかりません");
+		if (!response.ok) {
+		throw new Error(`HTTPエラー! ステータス: ${response.status} (${response.statusText})`);
+		}
 		const csvText = await response.text();
 
 		const rows = parseCSV(csvText);
@@ -845,13 +844,13 @@
 		nextBtn.disabled = false;
 		nextBtn.innerText = "次へ進む";
 		} else {
-		alert("CSVに有効な問題データが見つかりませんでした。");
+		document.getElementById("loading-status").innerText = "⚠️ CSVの行データが空か、正しくパースできませんでした。";
 		}
 
 		} catch (err) {
-		console.error("CSVファイルの読み込みエラー:", err);
-		document.getElementById("loading-status").innerText = "⚠️ CSVの読み込みに失敗しました（images2/駒得、評価値2.csv の配置をご確認ください）";
-		alert("『images2/駒得、評価値2.csv』の読み込みに失敗しました。ファイル名や配置場所をご確認ください。");
+		console.error("CSV読み込み詳細エラー:", err);
+		// 画面に詳細なエラー理由を表示する
+		document.getElementById("loading-status").innerText = "⚠️ 読み込み失敗: " + err.message + " (ファイル名やパスをご確認ください)";
 		}
 		}
 
