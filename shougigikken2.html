@@ -761,9 +761,7 @@
 		async function loadCsvFileDirectly() {
 		try {
 		const response = await fetch('images2/駒得、評価値2.csv');
-		if (!response.ok) {
-		throw new Error(`HTTPエラー! ステータス: ${response.status} (${response.statusText})`);
-		}
+		if (!response.ok) throw new Error("CSVファイルが見つかりません");
 		const csvText = await response.text();
 
 		const rows = parseCSV(csvText);
@@ -776,20 +774,28 @@
 		const r = rows[i];
 		if (!r || r.length === 0) continue;
 
+		// 正しいエクセルの列構造に準拠：
+		// r[0]: A列 = 表示番号 (例1, 4矢倉 等)
+		// r[1]: B列 = (予備/空白など)
+		// r[2]: C列 = 駒関係
+		// r[3]: D列 = 指し手・手番
+		// r[4]: E列 = 形勢判断
+		// r[5]: F列 = 最善手, r[6]: G列 = 評価値
 		let colA = String(r[0] || "").trim();
-		let colB = String(r[1] || "").trim();
 		let colC = String(r[2] || "").trim();
 		let colD = String(r[3] || "").trim();
 		let colE = String(r[4] || "").trim();
 		let colF = String(r[5] || "").trim();
+		let colG = String(r[6] || "").trim();
 
-		if (!colA) continue;
+		if (!colA || colA === "表示番号") continue;
 
 		let moves = [];
-		if (colE) {
-		moves.push({ move: colE, eval: colF });
+		if (colF) {
+		moves.push({ move: colF, eval: colG });
 		}
-		for (let col = 6; col < r.length; col += 2) {
+		// F, G列以降の最善手・評価値ペアを順番に取得
+		for (let col = 7; col < r.length; col += 2) {
 		let moveText = String(r[col] || "").trim();
 		let evalText = String(r[col + 1] || "").trim();
 		if (moveText) {
@@ -797,14 +803,14 @@
 		}
 		}
 
-		let cleanedKoma = cleanKomadoku(colB);
+		let cleanedKoma = cleanKomadoku(colC);
 
 		let qObj = {
 		no: colA,
 		image: `images2/${colA}.png`,
 		komadoku: cleanedKoma,
-		sashite: colC,
-		aiJudgment: colD || "互角",
+		sashite: colD,
+		aiJudgment: colE || "互角",
 		aiMoves: moves
 		};
 
@@ -814,7 +820,7 @@
 		loadedPractices[0] = qObj;
 		} else if (colA === "例3") {
 		loadedPractices[1] = qObj;
-		} else {
+		} else if (!colA.startsWith("例")) {
 		mainList.push(qObj);
 		}
 		}
@@ -838,19 +844,18 @@
 		}
 
 		if (mainList.length > 0) {
-		questions = mainList;
+		questions = mainList; // ちょうど30問になります
 		document.getElementById("loading-status").style.display = "none";
 		const nextBtn = document.getElementById("intro-next-btn");
 		nextBtn.disabled = false;
 		nextBtn.innerText = "次へ進む";
 		} else {
-		document.getElementById("loading-status").innerText = "⚠️ CSVの行データが空か、正しくパースできませんでした。";
+		document.getElementById("loading-status").innerText = "⚠️ CSVに有効な本番データが見つかりませんでした。";
 		}
 
 		} catch (err) {
-		console.error("CSV読み込み詳細エラー:", err);
-		// 画面に詳細なエラー理由を表示する
-		document.getElementById("loading-status").innerText = "⚠️ 読み込み失敗: " + err.message + " (ファイル名やパスをご確認ください)";
+		console.error("CSVファイルの読み込みエラー:", err);
+		document.getElementById("loading-status").innerText = "⚠️ CSVの読み込みに失敗しました（ファイル名や配置場所をご確認ください）";
 		}
 		}
 
