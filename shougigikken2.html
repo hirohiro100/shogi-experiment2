@@ -376,6 +376,7 @@
 				<li>確実な正解がある問題ではありません。直感的に<strong>「ご自身がどう感じるか」</strong>をお答えください。</li>
 				<li><strong>制限時間は設けておりません。1問あたりお時間がかかる場合でも問題ございませんので、ご自身のペースでじっくりとお考えください。</strong></li>
 				<li><strong>一度回答して「次へ」進むと、ブラウザの「戻る」ボタン等で前の問題に戻ることはできませんのでご注意ください。</strong></li>
+				<li>問8,18,22,28は盤面が反転しており先手後手が逆なのでご注意ください。</li>
 				<li>ご回答いただいたデータは、研究・分析の目的に使用するものです。</li>
 			</ul>
 		</div>
@@ -558,10 +559,10 @@
 		</div>
 	</div>
 
-	<!-- 6.5 例題のあなたと水匠5（AI）評価一覧画面 -->
+	<!-- 6.5 例題のあなたと水匠5（AI）の回答画面 -->
 	<div id="practice-result-section" class="section">
 		<div class="part-badge">第2部 (2/4)</div>
-		<h2>あなたと水匠5（AI）評価一覧</h2>
+		<h2>あなたと水匠5（AI）の回答</h2>
 		<hr style="border:0; border-top:1px solid #ddd; margin-bottom:20px;">
 
 		<div id="practice-feedback-container"></div>
@@ -622,10 +623,10 @@
 		</div>
 	</div>
 
-	<!-- 9. 本番のあなたと水匠5（AI）評価一覧画面 -->
+	<!-- 9. 本番のあなたと水匠5（AI）の回答画面 -->
 	<div id="experiment-result-section" class="section">
 		<div class="part-badge">第2部 (2/4)</div>
-		<h2>あなたと水匠5（AI）評価一覧</h2>
+		<h2>あなたと水匠5（AI）の回答</h2>
 		<hr style="border:0; border-top:1px solid #ddd; margin-bottom:20px;">
 
 		<div style="background: #e8f4fd; border: 1px solid #bbe1fa; border-radius: 6px; padding: 15px; margin-bottom: 25px;">
@@ -664,7 +665,7 @@
 			</div>
 		</div>
 
-		<div style="margin: 25px 0 10px 0; font-weight: bold; color: #333; font-size: 17px;">■ 各問題の画像付き詳細解説</div>
+		<div style="margin: 25px 0 10px 0; font-weight: bold; color: #333; font-size: 17px;">■ あなたと水匠5（AI）の回答</div>
 		<div id="experiment-feedback-container"></div>
 	</div>
 
@@ -676,6 +677,7 @@
 	<script>
 		let ex1Data = {
 		no: "例1",
+		displayNo: "例1",
 		image: "images2/例1.png",
 		komadoku: "先手角1歩・後手金交換",
 		sashite: "▲１八角打 手番△後手",
@@ -686,6 +688,7 @@
 		let practiceQuestions = [
 		{
 		no: "例2",
+		displayNo: "例2",
 		image: "images2/例2.png",
 		komadoku: "駒どくなし",
 		sashite: "▲２二歩打 手番△後手",
@@ -694,6 +697,7 @@
 		},
 		{
 		no: "例3",
+		displayNo: "例3",
 		image: "images2/例3.png",
 		komadoku: "先手銀・後手金桂1歩交換",
 		sashite: "△５一金 手番▲先手",
@@ -769,18 +773,12 @@
 		let mainList = [];
 		let loadedPractices = [];
 		let ex1Obj = null;
+		let questionCounter = 1;
 
 		for (let i = 0; i < rows.length; i++) {
 		const r = rows[i];
 		if (!r || r.length === 0) continue;
 
-		// 正しいエクセルの列構造に準拠：
-		// r[0]: A列 = 表示番号 (例1, 4矢倉 等)
-		// r[1]: B列 = (予備/空白など)
-		// r[2]: C列 = 駒関係
-		// r[3]: D列 = 指し手・手番
-		// r[4]: E列 = 形勢判断
-		// r[5]: F列 = 最善手, r[6]: G列 = 評価値
 		let colA = String(r[0] || "").trim();
 		let colC = String(r[2] || "").trim();
 		let colD = String(r[3] || "").trim();
@@ -794,7 +792,6 @@
 		if (colF) {
 		moves.push({ move: colF, eval: colG });
 		}
-		// F, G列以降の最善手・評価値ペアを順番に取得
 		for (let col = 7; col < r.length; col += 2) {
 		let moveText = String(r[col] || "").trim();
 		let evalText = String(r[col + 1] || "").trim();
@@ -805,23 +802,47 @@
 
 		let cleanedKoma = cleanKomadoku(colC);
 
-		let qObj = {
+		if (colA === "例1") {
+		ex1Obj = {
 		no: colA,
+		displayNo: "例1",
 		image: `images2/${colA}.png`,
 		komadoku: cleanedKoma,
 		sashite: colD,
 		aiJudgment: colE || "互角",
 		aiMoves: moves
 		};
-
-		if (colA === "例1") {
-		ex1Obj = qObj;
 		} else if (colA === "例2") {
-		loadedPractices[0] = qObj;
+		loadedPractices[0] = {
+		no: colA,
+		displayNo: "例2",
+		image: `images2/${colA}.png`,
+		komadoku: cleanedKoma,
+		sashite: colD,
+		aiJudgment: colE || "互角",
+		aiMoves: moves
+		};
 		} else if (colA === "例3") {
-		loadedPractices[1] = qObj;
+		loadedPractices[1] = {
+		no: colA,
+		displayNo: "例3",
+		image: `images2/${colA}.png`,
+		komadoku: cleanedKoma,
+		sashite: colD,
+		aiJudgment: colE || "互角",
+		aiMoves: moves
+		};
 		} else if (!colA.startsWith("例")) {
-		mainList.push(qObj);
+		mainList.push({
+		no: colA,
+		displayNo: `問${questionCounter}`,
+		image: `images2/${colA}.png`,
+		komadoku: cleanedKoma,
+		sashite: colD,
+		aiJudgment: colE || "互角",
+		aiMoves: moves
+		});
+		questionCounter++;
 		}
 		}
 
@@ -844,7 +865,7 @@
 		}
 
 		if (mainList.length > 0) {
-		questions = mainList; // ちょうど30問になります
+		questions = mainList;
 		document.getElementById("loading-status").style.display = "none";
 		const nextBtn = document.getElementById("intro-next-btn");
 		nextBtn.disabled = false;
@@ -1010,7 +1031,7 @@
 		if (!selectedRadio) return;
 
 		practiceResults.push({
-		questionNo: practiceQuestions[currentPracticeIndex].no,
+		questionNo: practiceQuestions[currentPracticeIndex].displayNo,
 		userAnswer: selectedRadio.value
 		});
 
@@ -1117,7 +1138,7 @@
 		const responseTimeMs = Math.round(endTime - questionStartTime);
 
 		results.push({
-		questionNo: questions[currentIndex].no,
+		questionNo: questions[currentIndex].displayNo,
 		answer: selectedRadio.value,
 		startTime: questions[currentIndex].startISO,
 		responseTime: responseTimeMs
@@ -1172,7 +1193,7 @@
 		const userAns = results[idx] ? results[idx].answer : "未回答";
 		const tr = document.createElement("tr");
 		tr.innerHTML = `
-		<td style="font-weight: bold;">${q.no}</td>
+		<td style="font-weight: bold;">${q.displayNo}</td>
 		<td><strong>${userAns}</strong></td>
 		`;
 
@@ -1213,10 +1234,10 @@
 		<div style="font-size:11px; font-weight:bold; color:#555; margin-bottom:2px;">${cardSenteText}</div>
 		<img src="${q.image}" alt="本番局面図" onerror="handleImageError(this)">
 		<div style="font-size:11px; font-weight:bold; color:#555; margin-top:2px;">${cardGoteText}</div>
-		<div style="font-size:11px; color:#007bff; margin-top:4px; font-weight:bold;">${q.no} (タップで拡大)</div>
+		<div style="font-size:11px; color:#007bff; margin-top:4px; font-weight:bold;">${q.displayNo} (タップで拡大)</div>
 		</div>
 		<div class="result-info">
-		<h3 style="margin-bottom: 10px; font-size: 17px; color: #0056b3;">${q.no} 解答</h3>
+		<h3 style="margin-bottom: 10px; font-size: 17px; color: #0056b3;">${q.displayNo} 解答</h3>
 		<div class="result-row">
 		<div class="result-label">駒関係</div>
 		<div class="result-val"><strong>${q.komadoku}</strong></div>
